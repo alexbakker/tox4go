@@ -29,7 +29,7 @@ type Packet struct {
 // InfoResponsePacket represents the structure of a packet that is sent in
 // response to a bootstrap node info request.
 type InfoResponsePacket struct {
-	Version int32
+	Version uint32
 	MOTD    string
 }
 
