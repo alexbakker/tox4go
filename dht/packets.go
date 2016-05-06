@@ -283,7 +283,7 @@ func (p *PingResponsePacket) UnmarshalBinary(data []byte) error {
 }
 
 // ID returns the packet ID of this packet.
-func (p *PingResponsePacket) ID() byte {
+func (p PingResponsePacket) ID() byte {
 	return packetIDPingResponse
 }
 
