@@ -105,7 +105,12 @@ func (p *InfoResponsePacket) UnmarshalBinary(data []byte) error {
 		return errors.New("MOTD too long")
 	}
 
-	p.MOTD = string(motdBytes)
+	_, err = reader.Read(motdBytes)
+	if err != nil {
+		return err
+	}
+
+	p.MOTD = string(bytes.Trim(motdBytes, "\x00"))
 	return nil
 }
 
@@ -151,12 +156,11 @@ func DestructPacket(p *Packet) (transport.Packet, error) {
 	case packetIDBootstrapInfo:
 		packetLen := len(p.Payload)
 
-		if packetLen == infoRequestPacketLength {
+		//horrible, but it's the best we can do
+		if packetLen == infoRequestPacketLength-1 && sliceIsZero(p.Payload) {
 			tPacket = &InfoRequestPacket{}
-		} else if packetLen >= 1+4 && packetLen < 1+4+maxMOTDLength {
-			tPacket = &InfoResponsePacket{}
 		} else {
-			return nil, fmt.Errorf("invalid packet length")
+			tPacket = &InfoResponsePacket{}
 		}
 	default:
 		return nil, fmt.Errorf("unknown packet type: %d", p.Type)
@@ -181,4 +185,13 @@ func ConstructPacket(packet transport.Packet) (*Packet, error) {
 
 	base.Payload = payload
 	return base, nil
+}
+
+func sliceIsZero(data []byte) bool {
+	for _, b := range data {
+		if b != 0 {
+			return false
+		}
+	}
+	return true
 }
