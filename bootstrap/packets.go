@@ -153,7 +153,7 @@ func DestructPacket(p *Packet) (transport.Packet, error) {
 
 		if packetLen == infoRequestPacketLength {
 			tPacket = &InfoRequestPacket{}
-		} else if packetLen > infoRequestPacketLength {
+		} else if packetLen >= 1+4 && packetLen < 1+4+maxMOTDLength {
 			tPacket = &InfoResponsePacket{}
 		} else {
 			return nil, fmt.Errorf("invalid packet length")
