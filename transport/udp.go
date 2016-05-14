@@ -79,6 +79,13 @@ func (t *UDPTransport) Listen() error {
 }
 
 func (t *UDPTransport) Stop() {
+	//try the self-pipe trick just in case we're stuck
+	addr, ok := t.conn.LocalAddr().(*net.UDPAddr)
+	if ok {
+		//no need to check for errors here, if sending fails we're fucked anyway
+		t.Send(&Message{Data: []byte{}, Addr: addr})
+	}
+
 	t.stopChan <- struct{}{}
 	<-t.stopChan
 }
