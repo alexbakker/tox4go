@@ -47,7 +47,7 @@ type nodeJSON struct {
 	Type      dht.NodeType `json:"type"`
 	PublicKey string       `json:"public_key"`
 	IP        net.IP       `json:"ip"`
-	Port      uint16       `json:"port"`
+	Port      int          `json:"port"`
 }
 
 func (s *stateAlias) MarshalJSON() ([]byte, error) {

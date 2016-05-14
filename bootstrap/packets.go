@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	packetIDBootstrapInfo   byte = 240
+	PacketIDBootstrapInfo   byte = 240
 	infoRequestPacketLength      = 78
 	maxMOTDLength                = 256
 )
@@ -116,7 +116,7 @@ func (p *InfoResponsePacket) UnmarshalBinary(data []byte) error {
 
 // ID returns the packet ID of this packet.
 func (p InfoResponsePacket) ID() byte {
-	return packetIDBootstrapInfo
+	return PacketIDBootstrapInfo
 }
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface.
@@ -146,14 +146,14 @@ func (p *InfoRequestPacket) UnmarshalBinary(data []byte) error {
 
 // ID returns the packet ID of this packet.
 func (p InfoRequestPacket) ID() byte {
-	return packetIDBootstrapInfo
+	return PacketIDBootstrapInfo
 }
 
 func DestructPacket(p *Packet) (transport.Packet, error) {
 	var tPacket transport.Packet
 
 	switch p.Type {
-	case packetIDBootstrapInfo:
+	case PacketIDBootstrapInfo:
 		packetLen := len(p.Payload)
 
 		//horrible, but it's the best we can do

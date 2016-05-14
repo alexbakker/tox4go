@@ -7,20 +7,20 @@ import (
 	"github.com/Impyy/tox4go/transport"
 )
 
-// DHT represents a DHT identity.
-type DHT struct {
+// Ident represents a DHT identity.
+type Ident struct {
 	PublicKey *[crypto.PublicKeySize]byte
 	SecretKey *[crypto.SecretKeySize]byte
 }
 
-// NewDHT creates a new DHT identity and generates a new keypair for it.
-func NewDHT() (*DHT, error) {
+// NewIdent creates a new DHT identity and generates a new keypair for it.
+func NewIdent() (*Ident, error) {
 	publicKey, secretKey, err := crypto.GenerateKeyPair()
 	if err != nil {
 		return nil, err
 	}
 
-	inst := &DHT{
+	inst := &Ident{
 		PublicKey: publicKey,
 		SecretKey: secretKey,
 	}
@@ -29,7 +29,7 @@ func NewDHT() (*DHT, error) {
 }
 
 // EncryptPacket encrypts the given packet.
-func (i *DHT) EncryptPacket(packet transport.Packet, publicKey *[crypto.PublicKeySize]byte) (*Packet, error) {
+func (i *Ident) EncryptPacket(packet transport.Packet, publicKey *[crypto.PublicKeySize]byte) (*Packet, error) {
 	base := Packet{}
 	base.Type = packet.ID()
 	base.SenderPublicKey = i.PublicKey
@@ -52,17 +52,17 @@ func (i *DHT) EncryptPacket(packet transport.Packet, publicKey *[crypto.PublicKe
 }
 
 // DecryptPacket decrypts the given packet.
-func (i *DHT) DecryptPacket(p *Packet) (transport.Packet, error) {
+func (i *Ident) DecryptPacket(p *Packet) (transport.Packet, error) {
 	var tPacket transport.Packet
 
 	switch p.Type {
-	case packetIDGetNodes:
+	case PacketIDGetNodes:
 		tPacket = &GetNodesPacket{}
-	case packetIDSendNodes:
+	case PacketIDSendNodes:
 		tPacket = &SendNodesPacket{}
-	case packetIDPingRequest:
+	case PacketIDPingRequest:
 		tPacket = &PingRequestPacket{}
-	case packetIDPingResponse:
+	case PacketIDPingResponse:
 		tPacket = &PingResponsePacket{}
 	default:
 		return nil, fmt.Errorf("unknown packet type: %d", p.Type)

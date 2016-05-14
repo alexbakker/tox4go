@@ -1,0 +1,84 @@
+package transport
+
+import (
+	"fmt"
+	"net"
+)
+
+type UDPTransport struct {
+	//note: net.Conn methods can be invoked from multiple goroutines simultaneously.
+	conn     *net.UDPConn
+	stopChan chan struct{}
+	handlers map[byte][]Handler
+}
+
+func NewUDPTransport(netProto string, addr string) (*UDPTransport, error) {
+	udpAddr, err := net.ResolveUDPAddr(netProto, addr)
+	if err != nil {
+		return nil, err
+	}
+
+	conn, err := net.ListenUDP(netProto, udpAddr)
+	if err != nil {
+		return nil, err
+	}
+
+	return &UDPTransport{
+		conn:     conn,
+		stopChan: make(chan struct{}),
+		handlers: map[byte][]Handler{},
+	}, nil
+}
+
+func (t *UDPTransport) Send(msg *Message) error {
+	_, err := t.conn.WriteTo(msg.Data, msg.Addr)
+	return err
+}
+
+func (t *UDPTransport) Handle(packetID byte, handler Handler) {
+	t.handlers[packetID] = append(t.handlers[packetID], handler)
+}
+
+func (t *UDPTransport) Listen() error {
+	for {
+		//FIXME: since conn reads have no deadline, this might hang forever
+		select {
+		case <-t.stopChan:
+			err := t.conn.Close()
+			close(t.stopChan)
+			return err
+		default:
+			buffer := make([]byte, 2048)
+			read, sender, err := t.conn.ReadFromUDP(buffer)
+			if err != nil {
+				fmt.Printf("udp read error: %s", err.Error())
+				return err
+			}
+
+			if read < 1 {
+				continue
+			}
+
+			packet := &Message{
+				Addr: sender,
+				Data: buffer[:read],
+			}
+
+			handlers, exists := t.handlers[packet.Data[0]]
+			if !exists {
+				continue
+			}
+
+			fmt.Printf("received %d from %s:%d\n", packet.Data[0], packet.Addr.IP.String(), packet.Addr.Port)
+
+			for _, handler := range handlers {
+				/* go */ handler(packet)
+			}
+		}
+	}
+}
+
+func (t *UDPTransport) Stop() {
+	t.stopChan <- struct{}{}
+	<-t.stopChan
+}
