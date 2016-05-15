@@ -41,51 +41,47 @@ func (t *UDPTransport) Handle(packetID byte, handler Handler) {
 
 func (t *UDPTransport) Listen() error {
 	for {
-		//FIXME: since conn reads have no deadline, this might hang forever
-		select {
-		case <-t.stopChan:
-			err := t.conn.Close()
+		buffer := make([]byte, 2048)
+		read, sender, err := t.conn.ReadFromUDP(buffer)
+		if isNetErrClosing(err) {
 			close(t.stopChan)
+			return nil
+		} else if err != nil {
+			fmt.Printf("udp read error: %s", err.Error())
 			return err
-		default:
-			buffer := make([]byte, 2048)
-			read, sender, err := t.conn.ReadFromUDP(buffer)
-			if err != nil {
-				fmt.Printf("udp read error: %s", err.Error())
-				return err
-			}
+		}
 
-			if read < 1 {
-				continue
-			}
+		if read < 1 {
+			continue
+		}
 
-			packet := &Message{
-				Addr: sender,
-				Data: buffer[:read],
-			}
+		packet := &Message{
+			Addr: sender,
+			Data: buffer[:read],
+		}
 
-			handlers, exists := t.handlers[packet.Data[0]]
-			if !exists {
-				continue
-			}
+		fmt.Printf("received %d from %s:%d\n", packet.Data[0], packet.Addr.IP.String(), packet.Addr.Port)
 
-			fmt.Printf("received %d from %s:%d\n", packet.Data[0], packet.Addr.IP.String(), packet.Addr.Port)
+		handlers, exists := t.handlers[packet.Data[0]]
+		if !exists {
+			continue
+		}
 
-			for _, handler := range handlers {
-				/* go */ handler(packet)
-			}
+		for _, handler := range handlers {
+			go handler(packet)
 		}
 	}
 }
 
 func (t *UDPTransport) Stop() {
-	//try the self-pipe trick just in case we're stuck
+	/*//try the self-pipe trick just in case we're stuck
 	addr, ok := t.conn.LocalAddr().(*net.UDPAddr)
 	if ok {
 		//no need to check for errors here, if sending fails we're fucked anyway
 		t.Send(&Message{Data: []byte{}, Addr: addr})
-	}
+	}*/
 
-	t.stopChan <- struct{}{}
+	t.conn.Close()
 	<-t.stopChan
+	//additional cleanup can be done here if needed
 }

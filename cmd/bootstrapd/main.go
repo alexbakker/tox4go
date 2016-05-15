@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"os/signal"
 
 	"github.com/Impyy/tox4go/bootstrap"
 	"github.com/Impyy/tox4go/transport"
@@ -31,8 +33,20 @@ func main() {
 		}
 	}
 
-	err = transport.Listen()
-	if err != nil {
-		panic(err)
+	//handle stop signal
+	interruptChan := make(chan os.Signal)
+	signal.Notify(interruptChan, os.Interrupt)
+
+	go func() {
+		err := transport.Listen()
+		if err != nil {
+			panic(err)
+		}
+	}()
+
+	for _ = range interruptChan {
+		fmt.Printf("killing node\n")
+		transport.Stop()
+		break
 	}
 }
