@@ -39,8 +39,7 @@ func (i *Ident) EncryptPacket(packet transport.Packet, publicKey *[crypto.Public
 		return nil, err
 	}
 
-	sharedKey := crypto.PrecomputeKey(publicKey, i.SecretKey)
-	encryptedPayload, nonce, err := crypto.Encrypt(payload, sharedKey)
+	encryptedPayload, nonce, err := i.EncryptBlob(payload, publicKey)
 	if err != nil {
 		return nil, err
 	}
@@ -68,8 +67,7 @@ func (i *Ident) DecryptPacket(p *Packet) (transport.Packet, error) {
 		return nil, fmt.Errorf("unknown packet type: %d", p.Type)
 	}
 
-	sharedKey := crypto.PrecomputeKey(p.SenderPublicKey, i.SecretKey)
-	decryptedData, err := crypto.Decrypt(p.Payload, sharedKey, p.Nonce)
+	decryptedData, err := i.DecryptBlob(p.Payload, p.SenderPublicKey, p.Nonce)
 	if err != nil {
 		return nil, err
 	}
@@ -80,4 +78,26 @@ func (i *Ident) DecryptPacket(p *Packet) (transport.Packet, error) {
 	}
 
 	return tPacket, nil
+}
+
+// EncryptBlob encrypts the given slice of data.
+func (i *Ident) EncryptBlob(data []byte, publicKey *[crypto.PublicKeySize]byte) ([]byte, *[crypto.NonceSize]byte, error) {
+	sharedKey := crypto.PrecomputeKey(publicKey, i.SecretKey)
+	encryptedPayload, nonce, err := crypto.Encrypt(data, sharedKey)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return encryptedPayload, nonce, nil
+}
+
+// DecryptBlob decrypts the given slice of data.
+func (i *Ident) DecryptBlob(data []byte, publicKey *[crypto.PublicKeySize]byte, nonce *[crypto.NonceSize]byte) ([]byte, error) {
+	sharedKey := crypto.PrecomputeKey(publicKey, i.SecretKey)
+	decryptedData, err := crypto.Decrypt(data, sharedKey, nonce)
+	if err != nil {
+		return nil, err
+	}
+
+	return decryptedData, nil
 }

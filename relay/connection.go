@@ -47,10 +47,12 @@ func (c *Connection) StartHandshake() (*HandshakePayload, error) {
 }
 
 func (c *Connection) EndHandshake(res *HandshakePayload) error {
-	if c.baseNonce == nil ||
-		!bytes.Equal(res.BaseNonce[:], c.baseNonce[:]) ||
-		!bytes.Equal(res.PublicKey[:], c.PublicKey[:]) {
-		return errors.New("handshake failed")
+	if c.baseNonce == nil || !bytes.Equal(res.BaseNonce[:], c.baseNonce[:]) {
+		return errors.New("handshake failed: base nonces are not equal")
+	}
+
+	if !bytes.Equal(res.PublicKey[:], c.PublicKey[:]) {
+		return errors.New("handshake failed: public keys are not equal")
 	}
 
 	c.verified = true
