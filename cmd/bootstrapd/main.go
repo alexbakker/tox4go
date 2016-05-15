@@ -6,6 +6,7 @@ import (
 	"os/signal"
 
 	"github.com/Impyy/tox4go/bootstrap"
+	"github.com/Impyy/tox4go/toxstatus"
 	"github.com/Impyy/tox4go/transport"
 )
 
@@ -21,7 +22,7 @@ func main() {
 	}
 	node.IsBootstrap = true
 
-	bootStrapNodes, err := grabNodes()
+	bootStrapNodes, err := toxstatus.Fetch()
 	if err != nil {
 		panic(err)
 	}

@@ -68,7 +68,7 @@ func (t *UDPTransport) Listen() error {
 		}
 
 		for _, handler := range handlers {
-			go handler(packet)
+			/* go */ handler(packet)
 		}
 	}
 }

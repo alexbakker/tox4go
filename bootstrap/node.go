@@ -37,7 +37,7 @@ func NewNode(tp transport.Transport) (*Node, error) {
 		},
 		IsBootstrap: false,
 		tp:          tp,
-		pings:       &ping.Collection{},
+		pings:       new(ping.Collection),
 	}
 
 	tp.Handle(dht.PacketIDPingRequest, node.handleDHTPacket)
@@ -65,11 +65,11 @@ func (n *Node) Query(node *dht.Node, publicKey *[crypto.PublicKeySize]byte) erro
 		PingID:    ping.ID,
 	}
 
-	return n.SendDHTPacket(packet, node)
+	return n.sendPacket(packet, node)
 }
 
 func (n *Node) Ping(node *dht.Node) error {
-	ping, err := ping.NewPing(node.PublicKey)
+	ping, err := n.pings.AddNew(node.PublicKey)
 	if err != nil {
 		return err
 	}
@@ -78,10 +78,14 @@ func (n *Node) Ping(node *dht.Node) error {
 		PingID: ping.ID,
 	}
 
-	return n.SendDHTPacket(packet, node)
+	return n.sendPacket(packet, node)
 }
 
-func (n *Node) SendDHTPacket(packet transport.Packet, destNode *dht.Node) error {
+func (n *Node) Pings() *ping.Collection {
+	return n.pings
+}
+
+func (n *Node) sendPacket(packet transport.Packet, destNode *dht.Node) error {
 	dhtPacket, err := n.Ident.EncryptPacket(packet, destNode.PublicKey)
 	if err != nil {
 		return err
@@ -122,16 +126,18 @@ func (n *Node) handleDHTPacket(msg *transport.Message) error {
 
 	switch packet := decryptedPacket.(type) {
 	case *dht.GetNodesPacket:
-		return n.handleGetNodesPacket(node, packet)
+		err = n.handleGetNodesPacket(node, packet)
 	case *dht.SendNodesPacket:
-		return n.handleSendNodesPacket(node, packet)
+		err = n.handleSendNodesPacket(node, packet)
 	case *dht.PingRequestPacket:
-		return n.handlePingRequestPacket(node, packet)
+		err = n.handlePingRequestPacket(node, packet)
 	case *dht.PingResponsePacket:
-		return n.handlePingResponsePacket(node, packet)
+		err = n.handlePingResponsePacket(node, packet)
 	default:
-		return fmt.Errorf("unknown packet type: %d", packet.ID())
+		err = fmt.Errorf("unknown packet type: %d", packet.ID())
 	}
+
+	return err
 }
 
 func (n *Node) handleGetNodesPacket(node *dht.Node, packet *dht.GetNodesPacket) error {
@@ -139,6 +145,13 @@ func (n *Node) handleGetNodesPacket(node *dht.Node, packet *dht.GetNodesPacket) 
 }
 
 func (n *Node) handleSendNodesPacket(node *dht.Node, packet *dht.SendNodesPacket) error {
+	ping := n.pings.Find(node.PublicKey, packet.PingID, true)
+	if ping != nil {
+		//this is where we'd update the last ping time of a dht friend
+	} else {
+		//who is this?
+	}
+
 	for _, node := range packet.Nodes {
 		//only call bootstrap if we don't know this friend yet
 		n.Bootstrap(node)
@@ -148,7 +161,7 @@ func (n *Node) handleSendNodesPacket(node *dht.Node, packet *dht.SendNodesPacket
 
 func (n *Node) handlePingRequestPacket(node *dht.Node, packet *dht.PingRequestPacket) error {
 	res := &dht.PingResponsePacket{PingID: packet.PingID}
-	return n.SendDHTPacket(res, node)
+	return n.sendPacket(res, node)
 }
 
 func (n *Node) handlePingResponsePacket(node *dht.Node, packet *dht.PingResponsePacket) error {

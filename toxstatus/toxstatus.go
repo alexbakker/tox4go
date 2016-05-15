@@ -1,4 +1,4 @@
-package main
+package toxstatus
 
 import (
 	"encoding/hex"
@@ -10,7 +10,7 @@ import (
 	"github.com/Impyy/tox4go/dht"
 )
 
-func grabNodes() ([]*dht.Node, error) {
+func Fetch() ([]*dht.Node, error) {
 	type toxNode struct {
 		Ipv4Address string `json:"ipv4"`
 		Ipv6Address string `json:"ipv6"`
