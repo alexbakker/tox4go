@@ -36,7 +36,7 @@ func (c *Collection) Find(publicKey *[crypto.PublicKeySize]byte, pingID uint64, 
 
 func (c *Collection) AddNew(publicKey *[crypto.PublicKeySize]byte) (*Ping, error) {
 	//remove all expired pings
-	c.ClearExpired()
+	c.Clear(true)
 
 	ping, err := NewPing(publicKey)
 	if err != nil {
@@ -51,11 +51,13 @@ func (c *Collection) AddNew(publicKey *[crypto.PublicKeySize]byte) (*Ping, error
 	return ping, nil
 }
 
-func (c *Collection) ClearExpired() {
+func (c *Collection) Clear(expiredOnly bool) {
 	for i := len(c.List) - 1; i >= 0; i-- {
-		if c.List[i].Expired() {
-			c.removeAt(i)
+		if expiredOnly && !c.List[i].Expired() {
+			continue
 		}
+
+		c.removeAt(i)
 	}
 }
 
