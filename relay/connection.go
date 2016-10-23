@@ -1,7 +1,6 @@
 package relay
 
 import (
-	"bytes"
 	"errors"
 
 	"github.com/Impyy/tox4go/crypto"
@@ -11,23 +10,22 @@ import (
 type Connection struct {
 	PublicKey     *[crypto.PublicKeySize]byte
 	SecretKey     *[crypto.SecretKeySize]byte
-	PeerPublicKey *[crypto.PublicKeySize]byte
 	verified      bool
 	baseNonce     *[crypto.NonceSize]byte
+	peerBaseNonce *[crypto.NonceSize]byte
+	peerPublicKey *[crypto.PublicKeySize]byte
 }
 
-func NewConnection(peerPublicKey *[crypto.PublicKeySize]byte) (*Connection, error) {
+func NewConnection() (*Connection, error) {
 	publicKey, secretKey, err := crypto.GenerateKeyPair()
 	if err != nil {
 		return nil, err
 	}
 
 	conn := &Connection{
-		PublicKey:     publicKey,
-		SecretKey:     secretKey,
-		PeerPublicKey: peerPublicKey,
-		verified:      false,
-		baseNonce:     nil,
+		PublicKey: publicKey,
+		SecretKey: secretKey,
+		verified:  false,
 	}
 
 	return conn, nil
@@ -47,14 +45,8 @@ func (c *Connection) StartHandshake() (*HandshakePayload, error) {
 }
 
 func (c *Connection) EndHandshake(res *HandshakePayload) error {
-	if c.baseNonce == nil || !bytes.Equal(res.BaseNonce[:], c.baseNonce[:]) {
-		return errors.New("handshake failed: base nonces are not equal")
-	}
-
-	if !bytes.Equal(res.PublicKey[:], c.PublicKey[:]) {
-		return errors.New("handshake failed: public keys are not equal")
-	}
-
+	c.peerBaseNonce = res.BaseNonce
+	c.peerPublicKey = res.PublicKey
 	c.verified = true
 	return nil
 }
