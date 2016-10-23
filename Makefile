@@ -16,7 +16,7 @@ monitor: prep
 	go build -o build/bin/dev/monitor github.com/Impyy/tox4go/cmd/dev/monitor
 
 test:
-	go test github.com/Impyy/tox4go/crypto github.com/Impyy/tox4go/dht github.com/Impyy/tox4go/state github.com/Impyy/tox4go/transport github.com/Impyy/tox4go/bootstrap
+	go test github.com/Impyy/tox4go/crypto github.com/Impyy/tox4go/dht github.com/Impyy/tox4go/state github.com/Impyy/tox4go/transport github.com/Impyy/tox4go/bootstrap github.com/Impyy/tox4go/relay
 
 prep:
 	mkdir -p build/bin build/bin/dev build/lib
