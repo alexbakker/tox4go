@@ -127,55 +127,63 @@ func (s *State) MarshalBinary() ([]byte, error) {
 	}
 
 	//write sectionTypeFriends
-	friendsSection := sectionFriends{Friends: s.Friends}
-	bytes, err = friendsSection.MarshalBinary()
-	if err != nil {
-		return nil, err
-	}
-	err = writeSection(buff, sectionTypeFriends, cookieInner, bytes)
-	if err != nil {
-		return nil, err
+	if len(s.Friends) > 0 {
+		friendsSection := sectionFriends{Friends: s.Friends}
+		bytes, err = friendsSection.MarshalBinary()
+		if err != nil {
+			return nil, err
+		}
+		err = writeSection(buff, sectionTypeFriends, cookieInner, bytes)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	//write sectionTypePathNode
-	pathNodeSection := sectionNodes{Nodes: s.PathNodes}
-	bytes, err = pathNodeSection.MarshalBinary()
-	if err != nil {
-		return nil, err
-	}
-	err = writeSection(buff, sectionTypePathNode, cookieInner, bytes)
-	if err != nil {
-		return nil, err
+	if len(s.PathNodes) > 0 {
+		pathNodeSection := sectionNodes{Nodes: s.PathNodes}
+		bytes, err = pathNodeSection.MarshalBinary()
+		if err != nil {
+			return nil, err
+		}
+		err = writeSection(buff, sectionTypePathNode, cookieInner, bytes)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	//write sectionTypeTCPRelay
-	tcpRelaySection := sectionNodes{Nodes: s.TCPRelays}
-	bytes, err = tcpRelaySection.MarshalBinary()
-	if err != nil {
-		return nil, err
-	}
-	err = writeSection(buff, sectionTypeTCPRelay, cookieInner, bytes)
-	if err != nil {
-		return nil, err
+	if len(s.TCPRelays) > 0 {
+		tcpRelaySection := sectionNodes{Nodes: s.TCPRelays}
+		bytes, err = tcpRelaySection.MarshalBinary()
+		if err != nil {
+			return nil, err
+		}
+		err = writeSection(buff, sectionTypeTCPRelay, cookieInner, bytes)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	//write sectionTypeDHT and dhtSectionTypeNodes
-	err = binary.Write(dhtBuff, binary.LittleEndian, uint32(cookieDHTGlobal))
-	if err != nil {
-		return nil, err
-	}
-	nodesSection := sectionNodes{Nodes: s.Nodes}
-	bytes, err = nodesSection.MarshalBinary()
-	if err != nil {
-		return nil, err
-	}
-	err = writeSection(dhtBuff, dhtSectionTypeNodes, cookieDHTInner, bytes)
-	if err != nil {
-		return nil, err
-	}
-	err = writeSection(buff, sectionTypeDHT, cookieInner, dhtBuff.Bytes())
-	if err != nil {
-		return nil, err
+	if len(s.Nodes) > 0 {
+		err = binary.Write(dhtBuff, binary.LittleEndian, uint32(cookieDHTGlobal))
+		if err != nil {
+			return nil, err
+		}
+		nodesSection := sectionNodes{Nodes: s.Nodes}
+		bytes, err = nodesSection.MarshalBinary()
+		if err != nil {
+			return nil, err
+		}
+		err = writeSection(dhtBuff, dhtSectionTypeNodes, cookieDHTInner, bytes)
+		if err != nil {
+			return nil, err
+		}
+		err = writeSection(buff, sectionTypeDHT, cookieInner, dhtBuff.Bytes())
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	//write sectionTypeName
