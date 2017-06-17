@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 
-	"github.com/Impyy/tox4go/crypto"
+	"github.com/alexbakker/tox4go/crypto"
 )
 
 // Friend represents the structure of friends that can be found inside a Tox

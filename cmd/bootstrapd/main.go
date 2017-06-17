@@ -5,9 +5,9 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/Impyy/tox4go/bootstrap"
-	"github.com/Impyy/tox4go/toxstatus"
-	"github.com/Impyy/tox4go/transport"
+	"github.com/alexbakker/tox4go/bootstrap"
+	"github.com/alexbakker/tox4go/toxstatus"
+	"github.com/alexbakker/tox4go/transport"
 )
 
 func main() {

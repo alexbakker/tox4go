@@ -8,8 +8,8 @@ import (
 	"io"
 	"net"
 
-	"github.com/Impyy/tox4go/crypto"
-	"github.com/Impyy/tox4go/dht"
+	"github.com/alexbakker/tox4go/crypto"
+	"github.com/alexbakker/tox4go/dht"
 )
 
 type (

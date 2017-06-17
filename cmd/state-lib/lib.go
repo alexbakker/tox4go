@@ -47,7 +47,7 @@ import (
 	"reflect"
 	"unsafe"
 
-	"github.com/Impyy/tox4go/state"
+	"github.com/alexbakker/tox4go/state"
 )
 
 //export state_unmarshal

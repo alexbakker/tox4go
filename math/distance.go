@@ -1,6 +1,6 @@
 package math
 
-import "github.com/Impyy/tox4go/crypto"
+import "github.com/alexbakker/tox4go/crypto"
 
 func DistanceBetween(publicKey1 *[crypto.PublicKeySize]byte, publicKey2 *[crypto.PublicKeySize]byte) *[crypto.PublicKeySize]byte {
 	dist := new([crypto.PublicKeySize]byte)

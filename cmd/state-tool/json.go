@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"net"
 
-	"github.com/Impyy/tox4go/crypto"
-	"github.com/Impyy/tox4go/dht"
-	"github.com/Impyy/tox4go/state"
+	"github.com/alexbakker/tox4go/crypto"
+	"github.com/alexbakker/tox4go/dht"
+	"github.com/alexbakker/tox4go/state"
 )
 
 type (
