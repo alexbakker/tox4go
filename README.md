@@ -1,8 +1,11 @@
 # tox4go
 
-For now, tox4go is just a collection of tools for Tox written in Go. It also
-contains other helpful things like (de)serializers for the state format and some
-Tox packets (currently only the DHT packets are covered).
+__tox4go__ is a collection of utilities for [Tox](https://tox.chat) in Go. It
+implements:
+- A small portion of the Tox protocol. Enough for
+  [nodes.tox.chat](https://nodes.tox.chat) to do its job.
+- (De)serializers for the Tox state format (used by Tox clients to save the user
+  profile).
+- Client to fetch the nodes list from [nodes.tox.chat](https://nodes.tox.chat).
 
-This is not intended to be a full reimplementation of toxcore but it may
-eventually become one.
+This project does not seek to become a full implementation of the Tox protocol.
