@@ -1,6 +1,7 @@
 package main
 
 import (
+	"embed"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -9,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path"
 	"runtime"
 	"time"
 
@@ -48,7 +50,9 @@ type selfInfo struct {
 
 var (
 	instance *bootstrap.Node
-	assets   = GetAssets()
+
+	//go:embed assets/*
+	assetFS embed.FS
 )
 
 func main() {
@@ -148,8 +152,8 @@ func handleHTTPRequest(w http.ResponseWriter, r *http.Request) {
 		urlPath = "index.html"
 	}
 
-	asset, exists := assets[urlPath]
-	if !exists {
+	asset, err := assetFS.ReadFile(path.Join("assets", urlPath))
+	if err != nil {
 		http.Error(w, http.StatusText(404), 404)
 	} else {
 		w.Write(asset)

@@ -12,7 +12,6 @@ bootstrapd: prep
 	go build -o build/bin/bootstrapd github.com/alexbakker/tox4go/cmd/bootstrapd
 
 monitor: prep
-	go run vendor/github.com/alexbakker/go-embed/*.go -pkg=main -input=cmd/dev/monitor/assets -output=cmd/dev/monitor/assets.go
 	go build -o build/bin/dev/monitor github.com/alexbakker/tox4go/cmd/dev/monitor
 
 test:
