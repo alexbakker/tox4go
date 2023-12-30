@@ -418,3 +418,14 @@ func (n *Node) MarshalBinary() ([]byte, error) {
 
 	return buff.Bytes(), nil
 }
+
+func (n *Node) Addr() net.Addr {
+	switch n.Type {
+	case NodeTypeUDP:
+		return &net.UDPAddr{IP: n.IP, Port: n.Port}
+	case NodeTypeTCP:
+		return &net.TCPAddr{IP: n.IP, Port: n.Port}
+	default:
+		panic(fmt.Sprintf("unsupported node type: %d", n.Type))
+	}
+}
