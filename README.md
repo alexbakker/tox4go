@@ -1,4 +1,4 @@
-# tox4go
+# tox4go [![build](https://github.com/alexbakker/tox4go/actions/workflows/build.yml/badge.svg)](https://github.com/alexbakker/tox4go/actions/workflows/build.yml)
 
 __tox4go__ is a collection of utilities for [Tox](https://tox.chat) in Go. It
 implements:
