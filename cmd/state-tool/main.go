@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 
 	"github.com/alexbakker/tox4go/state"
@@ -27,7 +27,7 @@ func main() {
 		return
 	}
 
-	inputBytes, err := ioutil.ReadAll(os.Stdin)
+	inputBytes, err := io.ReadAll(os.Stdin)
 	if err != nil {
 		fmt.Printf("error reading input: %s\n", err.Error())
 		return
