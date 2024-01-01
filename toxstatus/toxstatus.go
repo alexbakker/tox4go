@@ -68,8 +68,17 @@ func (c *Client) GetNodes(ctx context.Context) ([]*dht.Node, error) {
 		}
 		copy(publicKey[:], decPublicKey)
 
+		var ip net.IP
+		if node.IP4Addr != "" && node.IP4Addr != "-" {
+			ip = net.ParseIP(node.IP4Addr)
+		} else if node.IP6Addr != "" && node.IP6Addr != "-" {
+			ip = net.ParseIP(node.IP6Addr)
+		} else {
+			continue
+		}
+
 		res = append(res, &dht.Node{
-			IP:        net.ParseIP(node.IP4Addr),
+			IP:        ip,
 			Port:      node.Port,
 			PublicKey: publicKey,
 			Type:      dht.NodeTypeUDP,
