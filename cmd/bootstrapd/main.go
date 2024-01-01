@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/signal"
@@ -22,7 +23,7 @@ func main() {
 	}
 	node.IsBootstrap = true
 
-	bootStrapNodes, err := toxstatus.Fetch()
+	bootStrapNodes, err := toxstatus.GetNodes(context.Background())
 	if err != nil {
 		panic(err)
 	}
