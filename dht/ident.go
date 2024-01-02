@@ -17,7 +17,7 @@ type Identity struct {
 func NewIdentity() (*Identity, error) {
 	publicKey, secretKey, err := crypto.GenerateKeyPair()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("new dht identity: %w", err)
 	}
 
 	inst := &Identity{
