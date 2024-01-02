@@ -8,17 +8,6 @@
       pkgs = nixpkgs.legacyPackages.${system};
     in {
       packages = flake-utils.lib.flattenTree rec {
-        tox4go-bootstrapd = with pkgs; buildGoModule rec {
-          name = "tox4go-bootstrapd";
-          src = ./.;
-
-          subPackages = [ "cmd/bootstrapd" ];
-          vendorHash = "sha256-NHblFXIRK9moaZKBdfm61Ueo+GH/lGmVhrzYvMvYhjA=";
-
-          postInstall = ''
-            mv $out/bin/bootstrapd $out/bin/${name}
-          '';
-        };
         tox4go-state-tool = with pkgs; buildGoModule rec {
           name = "tox4go-state-tool";
           src = ./.;

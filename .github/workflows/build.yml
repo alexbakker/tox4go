@@ -11,9 +11,6 @@ jobs:
       - uses: DeterminateSystems/magic-nix-cache-action@8a218f9e264e9c3803c9a1ee1c30d8e4ab55be63
         with:
           diagnostic-endpoint:
-      - name: Build bootstrapd
-        run: |
-          nix build .#tox4go-bootstrapd --print-build-logs
       - name: Build state-tool
         run: |
           nix build .#tox4go-state-tool --print-build-logs
