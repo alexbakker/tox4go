@@ -25,6 +25,7 @@ func NewUDPTransport(netProto string, addr string) (*UDPTransport, error) {
 
 	return &UDPTransport{
 		conn:           conn,
+		stopChan:       make(chan struct{}),
 		packetHandlers: map[byte]Handler{},
 	}, nil
 }
