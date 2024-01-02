@@ -2,7 +2,10 @@ package transport
 
 import "net"
 
-type Handler func(packet *Message) error
+// Handler is a handler function for Tox packets. The backing buffer of the
+// given data slice may be reused after the function returns, overwriting its
+// contents.
+type Handler func(data []byte, addr *net.UDPAddr) error
 
 type Packet interface {
 	MarshalBinary() ([]byte, error)
@@ -11,13 +14,9 @@ type Packet interface {
 }
 
 type Transport interface {
-	Send(msg *Message) error
+	Send(data []byte, addr *net.UDPAddr) error
+	Handle(handler Handler)
+	HandlePacket(packetID byte, handler Handler)
 	Listen() error
-	Stop()
-	Handle(packetID byte, handler Handler)
-}
-
-type Message struct {
-	Data []byte
-	Addr *net.UDPAddr
+	Close() error
 }

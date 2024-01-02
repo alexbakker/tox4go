@@ -3,7 +3,6 @@ package transport
 import "net"
 
 type TCPTransport struct {
-	//note: net.Listener methods can be invoked from multiple goroutines simultaneously.
 	listener *net.TCPListener
 	stopChan chan struct{}
 	handlers map[byte][]Handler
