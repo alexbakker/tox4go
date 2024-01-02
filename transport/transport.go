@@ -5,7 +5,7 @@ import "net"
 // Handler is a handler function for Tox packets. The backing buffer of the
 // given data slice may be reused after the function returns, overwriting its
 // contents.
-type Handler func(data []byte, addr *net.UDPAddr) error
+type Handler func(data []byte, addr *net.UDPAddr)
 
 type Packet interface {
 	MarshalBinary() ([]byte, error)
