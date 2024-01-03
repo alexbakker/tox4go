@@ -16,8 +16,9 @@ const (
 )
 
 type Client struct {
-	HTTPClient *http.Client
-	URL        string
+	HTTPClient          *http.Client
+	URL                 string
+	IncludeOfflineNodes bool
 }
 
 func GetNodes(ctx context.Context) ([]*dht.Node, error) {
@@ -53,6 +54,7 @@ func (c *Client) GetNodes(ctx context.Context) ([]*dht.Node, error) {
 			Port      int    `json:"port"`
 			TCPPorts  []int  `json:"tcp_ports"`
 			PublicKey string `json:"public_key"`
+			Online    bool   `json:"status_udp"`
 		} `json:"nodes"`
 	}
 	if err = json.NewDecoder(httpRes.Body).Decode(&statusObj); err != nil {
@@ -61,6 +63,10 @@ func (c *Client) GetNodes(ctx context.Context) ([]*dht.Node, error) {
 
 	var res []*dht.Node
 	for _, node := range statusObj.Nodes {
+		if !node.Online && !c.IncludeOfflineNodes {
+			continue
+		}
+
 		publicKey := new([crypto.PublicKeySize]byte)
 		decPublicKey, err := hex.DecodeString(node.PublicKey)
 		if err != nil {
