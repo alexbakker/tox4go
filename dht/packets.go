@@ -15,22 +15,15 @@ const (
 	PacketIDPingResponse byte = 1
 	PacketIDGetNodes     byte = 2
 	PacketIDSendNodes    byte = 4
-
-	nodeTypeUDPIpv4 byte = 2
-	nodeTypeUDPIpv6 byte = 10
-	nodeTypeTCPIpv4 byte = 130
-	nodeTypeTCPIpv6 byte = 138
 )
 
-// NodeType represents the type of Node.
-// This can be a regular node (UDP) or a TCP relay.
 type NodeType byte
 
 const (
-	// NodeTypeUDP represents the UDP node type.
-	NodeTypeUDP NodeType = iota
-	// NodeTypeTCP represents the TCP node type.
-	NodeTypeTCP
+	NodeTypeUDPIP4 NodeType = 2
+	NodeTypeUDPIP6 NodeType = 10
+	NodeTypeTCPIP4 NodeType = 130
+	NodeTypeTCPIP6 NodeType = 138
 )
 
 // Packet represents the base of all DHT packets.
@@ -210,27 +203,27 @@ func (p *SendNodesPacket) UnmarshalBinary(data []byte) error {
 
 	p.Nodes = make([]*Node, int(count))
 	for i := range p.Nodes {
-		var ipType byte
+		var nodeType NodeType
 		var ipSize int
 
 		p.Nodes[i] = &Node{}
 
-		err = binary.Read(reader, binary.BigEndian, &ipType)
+		err = binary.Read(reader, binary.BigEndian, &nodeType)
 		if err != nil {
 			return err
 		}
 
-		switch ipType {
-		case nodeTypeUDPIpv4, nodeTypeTCPIpv4: //ipv4
+		switch nodeType {
+		case NodeTypeUDPIP4, NodeTypeTCPIP4:
 			ipSize = net.IPv4len
-		case nodeTypeUDPIpv6, nodeTypeTCPIpv6: //ipv6
+		case NodeTypeUDPIP6, NodeTypeTCPIP6:
 			ipSize = net.IPv6len
 		default:
-			return fmt.Errorf("unknown address family: %d", ipType)
+			return fmt.Errorf("bad address family: %d", nodeType)
 		}
 
 		nodeBytes := make([]byte, 1+ipSize+2+crypto.PublicKeySize)
-		nodeBytes[0] = ipType
+		nodeBytes[0] = byte(nodeType)
 		_, err := reader.Read(nodeBytes[1:])
 		if err != nil {
 			return err
@@ -327,30 +320,23 @@ func (p PingRequestPacket) ID() byte {
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface.
 func (n *Node) UnmarshalBinary(data []byte) error {
 	reader := bytes.NewReader(data)
-	var ipType byte
+	var nodeType NodeType
 	var ipSize int
 
-	err := binary.Read(reader, binary.BigEndian, &ipType)
+	err := binary.Read(reader, binary.BigEndian, &nodeType)
 	if err != nil {
 		return err
 	}
 
-	switch ipType {
-	case nodeTypeUDPIpv4:
+	switch nodeType {
+	case NodeTypeUDPIP4, NodeTypeTCPIP4:
 		ipSize = net.IPv4len
-		n.Type = NodeTypeUDP
-	case nodeTypeTCPIpv4:
-		ipSize = net.IPv4len
-		n.Type = NodeTypeTCP
-	case nodeTypeUDPIpv6:
+	case NodeTypeUDPIP6, NodeTypeTCPIP6:
 		ipSize = net.IPv6len
-		n.Type = NodeTypeUDP
-	case nodeTypeTCPIpv6:
-		ipSize = net.IPv6len
-		n.Type = NodeTypeTCP
 	default:
-		return fmt.Errorf("unknown address family: %d", ipType)
+		return fmt.Errorf("unknown address family: %d", nodeType)
 	}
+	n.Type = nodeType
 
 	n.IP = make([]byte, ipSize)
 	_, err = reader.Read(n.IP)
@@ -372,60 +358,52 @@ func (n *Node) UnmarshalBinary(data []byte) error {
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface.
 func (n *Node) MarshalBinary() ([]byte, error) {
-	buff := new(bytes.Buffer)
+	buf := new(bytes.Buffer)
 
-	//To4 returns nil if n.Addr.IP is not an IPv4 address
-	ipv4 := n.IP.To4()
-	var err error
-
-	var addrFam byte
-	if ipv4 != nil && n.Type == NodeTypeUDP {
-		addrFam = nodeTypeUDPIpv4
-	} else if ipv4 != nil && n.Type == NodeTypeTCP {
-		addrFam = nodeTypeTCPIpv4
-	} else if ipv4 == nil && n.Type == NodeTypeUDP {
-		addrFam = nodeTypeUDPIpv6
-	} else if ipv4 == nil && n.Type == NodeTypeTCP {
-		addrFam = nodeTypeTCPIpv6
-	} else {
-		return nil, errors.New("unable to determine address family")
-	}
-
-	err = binary.Write(buff, binary.BigEndian, addrFam)
+	err := binary.Write(buf, binary.BigEndian, n.Type)
 	if err != nil {
 		return nil, err
 	}
 
-	if ipv4 != nil {
-		_, err = buff.Write(ipv4)
-	} else {
-		_, err = buff.Write(n.IP)
+	if _, err = buf.Write(n.IP); err != nil {
+		return nil, err
 	}
 
+	err = binary.Write(buf, binary.BigEndian, uint16(n.Port))
 	if err != nil {
 		return nil, err
 	}
 
-	err = binary.Write(buff, binary.BigEndian, uint16(n.Port))
+	_, err = buf.Write(n.PublicKey[:])
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = buff.Write(n.PublicKey[:])
-	if err != nil {
-		return nil, err
-	}
-
-	return buff.Bytes(), nil
+	return buf.Bytes(), nil
 }
 
 func (n *Node) Addr() net.Addr {
 	switch n.Type {
-	case NodeTypeUDP:
+	case NodeTypeUDPIP4, NodeTypeTCPIP4:
 		return &net.UDPAddr{IP: n.IP, Port: n.Port}
-	case NodeTypeTCP:
+	case NodeTypeUDPIP6, NodeTypeTCPIP6:
 		return &net.TCPAddr{IP: n.IP, Port: n.Port}
 	default:
 		panic(fmt.Sprintf("unsupported node type: %d", n.Type))
+	}
+}
+
+func (t NodeType) Net() string {
+	switch t {
+	case NodeTypeUDPIP4:
+		return "udp4"
+	case NodeTypeUDPIP6:
+		return "udp6"
+	case NodeTypeTCPIP4:
+		return "tcp4"
+	case NodeTypeTCPIP6:
+		return "tcp6"
+	default:
+		panic(fmt.Sprintf("bad node type: %d", t))
 	}
 }

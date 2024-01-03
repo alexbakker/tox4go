@@ -75,15 +75,18 @@ func (c *Client) GetNodes(ctx context.Context) ([]*dht.Node, error) {
 		copy(publicKey[:], decPublicKey)
 
 		var ip net.IP
+		var nodeType dht.NodeType
 		if node.IP4Addr != "" && node.IP4Addr != "-" {
 			var r net.Resolver
 			if ips, err := r.LookupIP(ctx, "ip4", node.IP4Addr); err == nil && len(ips) > 0 {
 				ip = ips[0]
+				nodeType = dht.NodeTypeUDPIP4
 			}
 		} else if node.IP6Addr != "" && node.IP6Addr != "-" {
 			var r net.Resolver
 			if ips, err := r.LookupIP(ctx, "ip6", node.IP6Addr); err == nil && len(ips) > 0 {
 				ip = ips[0]
+				nodeType = dht.NodeTypeUDPIP6
 			}
 		}
 
@@ -95,7 +98,7 @@ func (c *Client) GetNodes(ctx context.Context) ([]*dht.Node, error) {
 			IP:        ip,
 			Port:      node.Port,
 			PublicKey: publicKey,
-			Type:      dht.NodeTypeUDP,
+			Type:      nodeType,
 		})
 	}
 
