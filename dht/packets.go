@@ -416,3 +416,21 @@ func (t NodeType) Net() string {
 		panic(fmt.Sprintf("bad node type: %d", t))
 	}
 }
+
+func (t PacketType) String() string {
+	var name string
+	switch t {
+	case PacketTypePingRequest:
+		name = "PING_REQUEST"
+	case PacketTypePingResponse:
+		name = "PING_RESPONSE"
+	case PacketTypeGetNodes:
+		name = "GET_NODES"
+	case PacketTypeSendNodes:
+		name = "SEND_NODES"
+	default:
+		name = "UNKNOWN"
+	}
+
+	return fmt.Sprintf("%s(%d)", name, t)
+}
