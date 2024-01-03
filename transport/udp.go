@@ -6,13 +6,12 @@ import (
 )
 
 type UDPTransport struct {
-	conn           *net.UDPConn
-	stopChan       chan struct{}
-	packetHandlers map[byte]Handler
-	handler        Handler
+	conn     *net.UDPConn
+	stopChan chan struct{}
+	handler  PacketHandler
 }
 
-func NewUDPTransport(netProto string, addr string) (*UDPTransport, error) {
+func NewUDPTransport(netProto string, addr string, handler PacketHandler) (*UDPTransport, error) {
 	udpAddr, err := net.ResolveUDPAddr(netProto, addr)
 	if err != nil {
 		return nil, err
@@ -24,23 +23,19 @@ func NewUDPTransport(netProto string, addr string) (*UDPTransport, error) {
 	}
 
 	return &UDPTransport{
-		conn:           conn,
-		stopChan:       make(chan struct{}),
-		packetHandlers: map[byte]Handler{},
+		conn:     conn,
+		stopChan: make(chan struct{}),
+		handler:  handler,
 	}, nil
 }
 
-func (t *UDPTransport) Send(data []byte, addr *net.UDPAddr) error {
+func (t *UDPTransport) SendPacket(data []byte, addr *net.UDPAddr) error {
 	_, err := t.conn.WriteTo(data, addr)
 	return err
 }
 
-func (t *UDPTransport) Handle(handler Handler) {
-	t.handler = handler
-}
-
-func (t *UDPTransport) HandlePacket(packetID byte, handler Handler) {
-	t.packetHandlers[packetID] = handler
+func (t *UDPTransport) HandlePacket(data []byte, addr *net.UDPAddr) {
+	t.handler(data, addr)
 }
 
 func (t *UDPTransport) Listen() error {
@@ -58,12 +53,7 @@ func (t *UDPTransport) Listen() error {
 			continue
 		}
 
-		data := buf[:read]
-		if handler, ok := t.packetHandlers[data[0]]; ok {
-			handler(data, senderAddr)
-		} else if t.handler != nil {
-			t.handler(data, senderAddr)
-		}
+		t.HandlePacket(buf[:read], senderAddr)
 	}
 }
 

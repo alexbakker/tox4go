@@ -5,7 +5,7 @@ import "net"
 type TCPTransport struct {
 	listener *net.TCPListener
 	stopChan chan struct{}
-	handlers map[byte][]Handler
+	handlers map[byte][]PacketHandler
 }
 
 func NewTCPTransport(netProto string, addr string) (*TCPTransport, error) {
@@ -22,6 +22,6 @@ func NewTCPTransport(netProto string, addr string) (*TCPTransport, error) {
 	return &TCPTransport{
 		listener: listener,
 		stopChan: make(chan struct{}),
-		handlers: map[byte][]Handler{},
+		handlers: map[byte][]PacketHandler{},
 	}, nil
 }

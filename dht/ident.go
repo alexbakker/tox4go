@@ -63,7 +63,7 @@ func (i *Identity) DecryptPacket(p *EncryptedPacket) (Packet, error) {
 	case PacketTypePingResponse:
 		tPacket = &PingResponsePacket{}
 	default:
-		return nil, fmt.Errorf("unknown packet type: %d", p.Type)
+		return nil, fmt.Errorf("unknown dht packet type: %d", p.Type)
 	}
 
 	decryptedData, err := i.DecryptBlob(p.Payload, p.SenderPublicKey, p.Nonce)
