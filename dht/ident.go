@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/alexbakker/tox4go/crypto"
-	"github.com/alexbakker/tox4go/transport"
 )
 
 // Identity represents a DHT identity.
@@ -29,8 +28,8 @@ func NewIdentity() (*Identity, error) {
 }
 
 // EncryptPacket encrypts the given packet.
-func (i *Identity) EncryptPacket(packet transport.Packet, publicKey *[crypto.PublicKeySize]byte) (*Packet, error) {
-	base := Packet{}
+func (i *Identity) EncryptPacket(packet Packet, publicKey *[crypto.PublicKeySize]byte) (*EncryptedPacket, error) {
+	base := EncryptedPacket{}
 	base.Type = packet.ID()
 	base.SenderPublicKey = i.PublicKey
 
@@ -51,17 +50,17 @@ func (i *Identity) EncryptPacket(packet transport.Packet, publicKey *[crypto.Pub
 }
 
 // DecryptPacket decrypts the given packet.
-func (i *Identity) DecryptPacket(p *Packet) (transport.Packet, error) {
-	var tPacket transport.Packet
+func (i *Identity) DecryptPacket(p *EncryptedPacket) (Packet, error) {
+	var tPacket Packet
 
 	switch p.Type {
-	case PacketIDGetNodes:
+	case PacketTypeGetNodes:
 		tPacket = &GetNodesPacket{}
-	case PacketIDSendNodes:
+	case PacketTypeSendNodes:
 		tPacket = &SendNodesPacket{}
-	case PacketIDPingRequest:
+	case PacketTypePingRequest:
 		tPacket = &PingRequestPacket{}
-	case PacketIDPingResponse:
+	case PacketTypePingResponse:
 		tPacket = &PingResponsePacket{}
 	default:
 		return nil, fmt.Errorf("unknown packet type: %d", p.Type)

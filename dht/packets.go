@@ -2,6 +2,7 @@ package dht
 
 import (
 	"bytes"
+	"encoding"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -10,11 +11,13 @@ import (
 	"github.com/alexbakker/tox4go/crypto"
 )
 
+type PacketType byte
+
 const (
-	PacketIDPingRequest  byte = 0
-	PacketIDPingResponse byte = 1
-	PacketIDGetNodes     byte = 2
-	PacketIDSendNodes    byte = 4
+	PacketTypePingRequest  PacketType = 0
+	PacketTypePingResponse PacketType = 1
+	PacketTypeGetNodes     PacketType = 2
+	PacketTypeSendNodes    PacketType = 4
 )
 
 type NodeType byte
@@ -26,9 +29,15 @@ const (
 	NodeTypeTCPIP6 NodeType = 138
 )
 
-// Packet represents the base of all DHT packets.
-type Packet struct {
-	Type            byte
+type Packet interface {
+	encoding.BinaryMarshaler
+	encoding.BinaryUnmarshaler
+	ID() PacketType
+}
+
+// EncryptedPacket represents an encrypted DHT packet.
+type EncryptedPacket struct {
+	Type            PacketType
 	SenderPublicKey *[crypto.PublicKeySize]byte
 	Nonce           *[crypto.NonceSize]byte
 	Payload         []byte /* encrypted */
@@ -97,12 +106,12 @@ func (p *GetNodesPacket) UnmarshalBinary(data []byte) error {
 }
 
 // ID returns the packet ID of this packet.
-func (p GetNodesPacket) ID() byte {
-	return PacketIDGetNodes
+func (p GetNodesPacket) ID() PacketType {
+	return PacketTypeGetNodes
 }
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface.
-func (p *Packet) MarshalBinary() ([]byte, error) {
+func (p *EncryptedPacket) MarshalBinary() ([]byte, error) {
 	buff := new(bytes.Buffer)
 
 	err := binary.Write(buff, binary.BigEndian, p.Type)
@@ -129,7 +138,7 @@ func (p *Packet) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary implements the encoding.BinaryMarshaler interface.
-func (p *Packet) UnmarshalBinary(data []byte) error {
+func (p *EncryptedPacket) UnmarshalBinary(data []byte) error {
 	reader := bytes.NewReader(data)
 
 	err := binary.Read(reader, binary.BigEndian, &p.Type)
@@ -239,15 +248,15 @@ func (p *SendNodesPacket) UnmarshalBinary(data []byte) error {
 }
 
 // ID returns the packet ID of this packet.
-func (p SendNodesPacket) ID() byte {
-	return PacketIDSendNodes
+func (p SendNodesPacket) ID() PacketType {
+	return PacketTypeSendNodes
 }
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface.
 func (p *PingResponsePacket) MarshalBinary() ([]byte, error) {
 	buff := new(bytes.Buffer)
 
-	err := binary.Write(buff, binary.BigEndian, PacketIDPingResponse)
+	err := binary.Write(buff, binary.BigEndian, PacketTypePingResponse)
 	if err != nil {
 		return nil, err
 	}
@@ -264,11 +273,11 @@ func (p *PingResponsePacket) MarshalBinary() ([]byte, error) {
 func (p *PingResponsePacket) UnmarshalBinary(data []byte) error {
 	reader := bytes.NewReader(data)
 
-	var pingType byte
+	var pingType PacketType
 	err := binary.Read(reader, binary.BigEndian, &pingType)
 	if err != nil {
 		return err
-	} else if pingType != PacketIDPingResponse {
+	} else if pingType != PacketTypePingResponse {
 		return fmt.Errorf("incorrect ping type: %d! is this a replay attack?", pingType)
 	}
 
@@ -276,15 +285,15 @@ func (p *PingResponsePacket) UnmarshalBinary(data []byte) error {
 }
 
 // ID returns the packet ID of this packet.
-func (p PingResponsePacket) ID() byte {
-	return PacketIDPingResponse
+func (p PingResponsePacket) ID() PacketType {
+	return PacketTypePingResponse
 }
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface.
 func (p *PingRequestPacket) MarshalBinary() ([]byte, error) {
 	buff := new(bytes.Buffer)
 
-	err := binary.Write(buff, binary.BigEndian, PacketIDPingRequest)
+	err := binary.Write(buff, binary.BigEndian, PacketTypePingRequest)
 	if err != nil {
 		return nil, err
 	}
@@ -301,11 +310,11 @@ func (p *PingRequestPacket) MarshalBinary() ([]byte, error) {
 func (p *PingRequestPacket) UnmarshalBinary(data []byte) error {
 	reader := bytes.NewReader(data)
 
-	var pingType byte
+	var pingType PacketType
 	err := binary.Read(reader, binary.BigEndian, &pingType)
 	if err != nil {
 		return err
-	} else if pingType != PacketIDPingRequest {
+	} else if pingType != PacketTypePingRequest {
 		return fmt.Errorf("incorrect ping type: %d! is this a replay attack?", pingType)
 	}
 
@@ -313,8 +322,8 @@ func (p *PingRequestPacket) UnmarshalBinary(data []byte) error {
 }
 
 // ID returns the packet ID of this packet.
-func (p PingRequestPacket) ID() byte {
-	return PacketIDPingRequest
+func (p PingRequestPacket) ID() PacketType {
+	return PacketTypePingRequest
 }
 
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface.
