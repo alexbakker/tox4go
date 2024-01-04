@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"errors"
 
-	"github.com/alexbakker/tox4go/crypto"
+	"github.com/alexbakker/tox4go/dht"
 )
 
 type Collection struct {
@@ -19,7 +19,7 @@ func NewCollection() *Collection {
 
 // Find tries to find the given ping ID and public key in the list of pings.
 // If 'remove' is set to true, the entry will also be removed from the list.
-func (c *Collection) Find(publicKey *[crypto.PublicKeySize]byte, pingID uint64, remove bool) *Ping {
+func (c *Collection) Find(publicKey *dht.PublicKey, pingID uint64, remove bool) *Ping {
 	for i, ping := range c.List {
 		if bytes.Equal(ping.PublicKey[:], publicKey[:]) && ping.ID == pingID {
 			if remove {
@@ -34,7 +34,7 @@ func (c *Collection) Find(publicKey *[crypto.PublicKeySize]byte, pingID uint64, 
 	return nil
 }
 
-func (c *Collection) AddNew(publicKey *[crypto.PublicKeySize]byte) (*Ping, error) {
+func (c *Collection) AddNew(publicKey *dht.PublicKey) (*Ping, error) {
 	//remove all expired pings
 	c.Clear(true)
 

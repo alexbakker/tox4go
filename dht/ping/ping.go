@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/alexbakker/tox4go/crypto"
+	"github.com/alexbakker/tox4go/dht"
 )
 
 const (
@@ -11,12 +12,12 @@ const (
 )
 
 type Ping struct {
-	PublicKey *[crypto.PublicKeySize]byte
+	PublicKey *dht.PublicKey
 	ID        uint64
 	Time      time.Time
 }
 
-func NewPing(publicKey *[crypto.PublicKeySize]byte) (*Ping, error) {
+func NewPing(publicKey *dht.PublicKey) (*Ping, error) {
 	pingID, err := crypto.GeneratePingID()
 	if err != nil {
 		return nil, err
@@ -30,5 +31,5 @@ func NewPing(publicKey *[crypto.PublicKeySize]byte) (*Ping, error) {
 }
 
 func (p *Ping) Expired() bool {
-	return time.Now().Sub(p.Time) > Timeout
+	return time.Since(p.Time) > Timeout
 }
