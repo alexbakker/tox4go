@@ -7,7 +7,6 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/alexbakker/tox4go/crypto"
 	"github.com/alexbakker/tox4go/dht"
 )
 
@@ -67,7 +66,7 @@ func (c *Client) GetNodes(ctx context.Context) ([]*dht.Node, error) {
 			continue
 		}
 
-		publicKey := new([crypto.PublicKeySize]byte)
+		publicKey := new(dht.PublicKey)
 		decPublicKey, err := hex.DecodeString(node.PublicKey)
 		if err != nil {
 			continue

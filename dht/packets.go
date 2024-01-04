@@ -14,19 +14,19 @@ import (
 type PacketType byte
 
 const (
-	PacketTypePingRequest  PacketType = 0
-	PacketTypePingResponse PacketType = 1
-	PacketTypeGetNodes     PacketType = 2
-	PacketTypeSendNodes    PacketType = 4
+	PacketTypePingRequest  PacketType = 0x00
+	PacketTypePingResponse PacketType = 0x01
+	PacketTypeGetNodes     PacketType = 0x02
+	PacketTypeSendNodes    PacketType = 0x04
 )
 
 type NodeType byte
 
 const (
-	NodeTypeUDPIP4 NodeType = 2
-	NodeTypeUDPIP6 NodeType = 10
-	NodeTypeTCPIP4 NodeType = 130
-	NodeTypeTCPIP6 NodeType = 138
+	NodeTypeUDPIP4 NodeType = 0x02
+	NodeTypeUDPIP6 NodeType = 0x0A
+	NodeTypeTCPIP4 NodeType = 0x82
+	NodeTypeTCPIP6 NodeType = 0x8A
 )
 
 type Packet interface {
@@ -38,7 +38,7 @@ type Packet interface {
 // EncryptedPacket represents an encrypted DHT packet.
 type EncryptedPacket struct {
 	Type            PacketType
-	SenderPublicKey *[crypto.PublicKeySize]byte
+	SenderPublicKey *PublicKey
 	Nonce           *[crypto.NonceSize]byte
 	Payload         []byte /* encrypted */
 }
@@ -46,14 +46,14 @@ type EncryptedPacket struct {
 // Node represents a node in the DHT.
 type Node struct {
 	Type      NodeType
-	PublicKey *[crypto.PublicKeySize]byte
+	PublicKey *PublicKey
 	IP        net.IP
 	Port      int
 }
 
 // GetNodesPacket represents the encrypted portion of the GetNodes request.
 type GetNodesPacket struct {
-	PublicKey *[crypto.PublicKeySize]byte
+	PublicKey *PublicKey
 	PingID    uint64
 }
 
@@ -96,7 +96,7 @@ func (p *GetNodesPacket) MarshalBinary() ([]byte, error) {
 func (p *GetNodesPacket) UnmarshalBinary(data []byte) error {
 	reader := bytes.NewReader(data)
 
-	p.PublicKey = new([crypto.PublicKeySize]byte)
+	p.PublicKey = new(PublicKey)
 	_, err := reader.Read(p.PublicKey[:])
 	if err != nil {
 		return err
@@ -146,7 +146,7 @@ func (p *EncryptedPacket) UnmarshalBinary(data []byte) error {
 		return err
 	}
 
-	p.SenderPublicKey = new([crypto.PublicKeySize]byte)
+	p.SenderPublicKey = new(PublicKey)
 	_, err = reader.Read(p.SenderPublicKey[:])
 	if err != nil {
 		return err
@@ -360,7 +360,7 @@ func (n *Node) UnmarshalBinary(data []byte) error {
 	}
 	n.Port = int(port)
 
-	n.PublicKey = new([crypto.PublicKeySize]byte)
+	n.PublicKey = new(PublicKey)
 	_, err = reader.Read(n.PublicKey[:])
 	return err
 }

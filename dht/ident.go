@@ -8,7 +8,7 @@ import (
 
 // Identity represents a DHT identity.
 type Identity struct {
-	PublicKey *[crypto.PublicKeySize]byte
+	PublicKey *PublicKey
 	SecretKey *[crypto.SecretKeySize]byte
 }
 
@@ -20,7 +20,7 @@ func NewIdentity() (*Identity, error) {
 	}
 
 	inst := &Identity{
-		PublicKey: publicKey,
+		PublicKey: (*PublicKey)(publicKey),
 		SecretKey: secretKey,
 	}
 
@@ -28,7 +28,7 @@ func NewIdentity() (*Identity, error) {
 }
 
 // EncryptPacket encrypts the given packet.
-func (i *Identity) EncryptPacket(packet Packet, publicKey *[crypto.PublicKeySize]byte) (*EncryptedPacket, error) {
+func (i *Identity) EncryptPacket(packet Packet, publicKey *PublicKey) (*EncryptedPacket, error) {
 	base := EncryptedPacket{}
 	base.Type = packet.ID()
 	base.SenderPublicKey = i.PublicKey
@@ -80,8 +80,8 @@ func (i *Identity) DecryptPacket(p *EncryptedPacket) (Packet, error) {
 }
 
 // EncryptBlob encrypts the given slice of data.
-func (i *Identity) EncryptBlob(data []byte, publicKey *[crypto.PublicKeySize]byte) ([]byte, *[crypto.NonceSize]byte, error) {
-	sharedKey := crypto.PrecomputeKey(publicKey, i.SecretKey)
+func (i *Identity) EncryptBlob(data []byte, publicKey *PublicKey) ([]byte, *[crypto.NonceSize]byte, error) {
+	sharedKey := crypto.PrecomputeKey((*[PublicKeySize]byte)(publicKey), i.SecretKey)
 	encryptedPayload, nonce, err := crypto.Encrypt(data, sharedKey)
 	if err != nil {
 		return nil, nil, err
@@ -91,8 +91,8 @@ func (i *Identity) EncryptBlob(data []byte, publicKey *[crypto.PublicKeySize]byt
 }
 
 // DecryptBlob decrypts the given slice of data.
-func (i *Identity) DecryptBlob(data []byte, publicKey *[crypto.PublicKeySize]byte, nonce *[crypto.NonceSize]byte) ([]byte, error) {
-	sharedKey := crypto.PrecomputeKey(publicKey, i.SecretKey)
+func (i *Identity) DecryptBlob(data []byte, publicKey *PublicKey, nonce *[crypto.NonceSize]byte) ([]byte, error) {
+	sharedKey := crypto.PrecomputeKey((*[PublicKeySize]byte)(publicKey), i.SecretKey)
 	decryptedData, err := crypto.Decrypt(data, sharedKey, nonce)
 	if err != nil {
 		return nil, err

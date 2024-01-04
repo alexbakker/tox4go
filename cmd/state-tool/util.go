@@ -8,7 +8,7 @@ import (
 	"github.com/alexbakker/tox4go/state"
 )
 
-//to anyone who's reading these convert functions: send help
+// to anyone who's reading these convert functions: send help
 func convertFriends(f1 []*state.Friend) []*friendJSON {
 	friends := make([]*friendJSON, len(f1))
 
@@ -94,7 +94,7 @@ func convertNodesBack(n1 []*nodeJSON) ([]*dht.Node, error) {
 				actual:   len(publicKey),
 			}
 		}
-		nodes[i].PublicKey = new([crypto.PublicKeySize]byte)
+		nodes[i].PublicKey = new(dht.PublicKey)
 		copy(nodes[i].PublicKey[:], publicKey)
 	}
 
