@@ -1,6 +1,10 @@
 package dht
 
-import "github.com/alexbakker/tox4go/crypto"
+import (
+	"encoding/hex"
+
+	"github.com/alexbakker/tox4go/crypto"
+)
 
 const PublicKeySize = crypto.PublicKeySize
 
@@ -33,4 +37,8 @@ func (pk1 *PublicKey) DistanceTo(pk2 *PublicKey) *[PublicKeySize]byte {
 	}
 
 	return dist
+}
+
+func (pk *PublicKey) String() string {
+	return hex.EncodeToString(pk[:])
 }
