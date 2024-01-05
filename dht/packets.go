@@ -393,9 +393,9 @@ func (n *Node) MarshalBinary() ([]byte, error) {
 
 func (n *Node) Addr() net.Addr {
 	switch n.Type {
-	case NodeTypeUDPIP4, NodeTypeTCPIP4:
+	case NodeTypeUDPIP4, NodeTypeUDPIP6:
 		return &net.UDPAddr{IP: n.IP, Port: n.Port}
-	case NodeTypeUDPIP6, NodeTypeTCPIP6:
+	case NodeTypeTCPIP4, NodeTypeTCPIP6:
 		return &net.TCPAddr{IP: n.IP, Port: n.Port}
 	default:
 		panic(fmt.Sprintf("unsupported node type: %d", n.Type))
