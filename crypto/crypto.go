@@ -64,10 +64,3 @@ func PrecomputeKey(publicKey *[PublicKeySize]byte, secretKey *[SecretKeySize]byt
 func GenerateKeyPair() (*[PublicKeySize]byte, *[SecretKeySize]byte, error) {
 	return box.GenerateKey(rand.Reader)
 }
-
-// Zero replaces all values in the given buffer with zeros.
-// This might give a false sense of security.
-// There is no guarantee that the system hasn't swapped a piece of RAM to disk that contains this buffer.
-func Zero(buffer []byte) {
-	copy(buffer, make([]byte, len(buffer)))
-}
