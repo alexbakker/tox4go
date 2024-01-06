@@ -112,8 +112,7 @@ func (s *stateAlias) UnmarshalJSON(data []byte) error {
 			actual:   len(publicKey),
 		}
 	}
-	s.PublicKey = new([crypto.PublicKeySize]byte)
-	copy(s.PublicKey[:], publicKey)
+	s.PublicKey = (*[crypto.PublicKeySize]byte)(publicKey)
 
 	secretKey, err := hex.DecodeString(temp.SecretKey)
 	if err != nil {
@@ -125,8 +124,7 @@ func (s *stateAlias) UnmarshalJSON(data []byte) error {
 			actual:   len(secretKey),
 		}
 	}
-	s.SecretKey = new([crypto.SecretKeySize]byte)
-	copy(s.SecretKey[:], secretKey)
+	s.SecretKey = (*[crypto.SecretKeySize]byte)(secretKey)
 
 	return nil
 }

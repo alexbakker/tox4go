@@ -66,12 +66,11 @@ func (c *Client) GetNodes(ctx context.Context) ([]*dht.Node, error) {
 			continue
 		}
 
-		publicKey := new(dht.PublicKey)
 		decPublicKey, err := hex.DecodeString(node.PublicKey)
 		if err != nil {
 			continue
 		}
-		copy(publicKey[:], decPublicKey)
+		publicKey := (*dht.PublicKey)(decPublicKey)
 
 		var ip net.IP
 		var nodeType dht.NodeType

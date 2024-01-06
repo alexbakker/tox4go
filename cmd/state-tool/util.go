@@ -52,8 +52,7 @@ func convertFriendsBack(f1 []*friendJSON) ([]*state.Friend, error) {
 				actual:   len(publicKey),
 			}
 		}
-		friends[i].PublicKey = new([crypto.PublicKeySize]byte)
-		copy(friends[i].PublicKey[:], publicKey)
+		friends[i].PublicKey = (*[crypto.PublicKeySize]byte)(publicKey)
 	}
 
 	return friends, nil
@@ -94,8 +93,7 @@ func convertNodesBack(n1 []*nodeJSON) ([]*dht.Node, error) {
 				actual:   len(publicKey),
 			}
 		}
-		nodes[i].PublicKey = new(dht.PublicKey)
-		copy(nodes[i].PublicKey[:], publicKey)
+		nodes[i].PublicKey = (*dht.PublicKey)(publicKey)
 	}
 
 	return nodes, nil
