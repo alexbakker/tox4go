@@ -1,84 +1,90 @@
 package ping
 
 import (
-	"bytes"
-	"errors"
+	"fmt"
+	"time"
 
 	"github.com/alexbakker/tox4go/dht"
 )
 
+type pingKey struct {
+	ID        uint64
+	PublicKey dht.PublicKey
+}
+
 type Collection struct {
-	List []*Ping
+	pings   []*Ping
+	pingMap map[pingKey]*Ping
+	timeout time.Duration
 }
 
-func NewCollection() *Collection {
+func NewCollection(timeout time.Duration) *Collection {
 	return &Collection{
-		List: []*Ping{},
+		pingMap: make(map[pingKey]*Ping),
+		timeout: timeout,
 	}
 }
 
-// Find tries to find the given ping ID and public key in the list of pings.
-// If 'remove' is set to true, the entry will also be removed from the list.
-func (c *Collection) Find(publicKey *dht.PublicKey, pingID uint64, remove bool) *Ping {
-	for i, ping := range c.List {
-		if bytes.Equal(ping.PublicKey[:], publicKey[:]) && ping.ID == pingID {
-			if remove {
-				//remove this pingID from the list
-				//doing this here is fine if we break out of the loop right away
-				c.removeAt(i)
-			}
-			return ping
-		}
+func (c *Collection) Add(p *Ping) error {
+	c.ClearExpired()
+
+	key := pingKey{PublicKey: *p.PublicKey, ID: p.ID}
+	if _, ok := c.pingMap[key]; ok {
+		return fmt.Errorf("ping id already in collection: %d", p.ID)
 	}
 
+	c.pingMap[key] = p
+	c.pings = append(c.pings, p)
 	return nil
 }
 
 func (c *Collection) AddNew(publicKey *dht.PublicKey) (*Ping, error) {
-	//remove all expired pings
-	c.Clear(true)
-
-	ping, err := NewPing(publicKey)
+	p, err := New(publicKey)
 	if err != nil {
 		return nil, err
 	}
 
-	err = c.add(ping)
-	if err != nil {
+	if err = c.Add(p); err != nil {
 		return nil, err
 	}
 
-	return ping, nil
+	return p, nil
 }
 
-func (c *Collection) Add(p *Ping) error {
-	err := c.add(p)
-	if err != nil {
-		return err
+// Pop tries to find the given ping ID and public key in the collection of
+// pings. If it is found, it is removed from the collection and returned. If it
+// is not found, an error is returned. Expiry can also be the reason that the
+// given ping ID is not found, but this will not be reported as a separate
+// error.
+func (c *Collection) Pop(publicKey *dht.PublicKey, id uint64) (*Ping, error) {
+	c.ClearExpired()
+
+	key := pingKey{PublicKey: *publicKey, ID: id}
+	p, ok := c.pingMap[key]
+	if !ok {
+		return nil, fmt.Errorf("ping id not in collection: %d", id)
 	}
 
-	return nil
+	// Delete the ping from the map immediately, but wait for expiry before
+	// deleting it from the time-sorted list, because lookups in the latter is
+	// expensive for non-expired pings in large ping lists
+	delete(c.pingMap, key)
+	return p, nil
 }
 
-func (c *Collection) Clear(expiredOnly bool) {
-	for i := len(c.List) - 1; i >= 0; i-- {
-		if expiredOnly && !c.List[i].Expired() {
-			continue
+func (c *Collection) ClearExpired() {
+	// Iterate through the time-sorted list of pings and delete any pings from
+	// the map that have expired
+	var deli int
+	for i, p := range c.pings {
+		if !p.Expired(c.timeout) {
+			deli = i + 1
+			break
 		}
 
-		c.removeAt(i)
-	}
-}
-
-func (c *Collection) removeAt(i int) {
-	c.List = append(c.List[:i], c.List[i+1:]...)
-}
-
-func (c *Collection) add(ping *Ping) error {
-	if c.Find(ping.PublicKey, ping.ID, false) != nil {
-		return errors.New("item is already in the list")
+		delete(c.pingMap, pingKey{PublicKey: *p.PublicKey, ID: p.ID})
 	}
 
-	c.List = append(c.List, ping)
-	return nil
+	// Slice the pings that have expired away from the ping list
+	c.pings = c.pings[deli:]
 }

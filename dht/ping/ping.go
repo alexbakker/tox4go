@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	Timeout = time.Second * 20
+	DefaultTimeout = time.Second * 20
 )
 
 type Ping struct {
@@ -17,7 +17,7 @@ type Ping struct {
 	Time      time.Time
 }
 
-func NewPing(publicKey *dht.PublicKey) (*Ping, error) {
+func New(publicKey *dht.PublicKey) (*Ping, error) {
 	pingID, err := crypto.GeneratePingID()
 	if err != nil {
 		return nil, err
@@ -30,6 +30,6 @@ func NewPing(publicKey *dht.PublicKey) (*Ping, error) {
 	}, nil
 }
 
-func (p *Ping) Expired() bool {
-	return time.Since(p.Time) > Timeout
+func (p *Ping) Expired(timeout time.Duration) bool {
+	return time.Since(p.Time) > timeout
 }
