@@ -13,7 +13,7 @@
           src = ./.;
 
           subPackages = [ "cmd/state-tool" ];
-          vendorHash = "sha256-NHblFXIRK9moaZKBdfm61Ueo+GH/lGmVhrzYvMvYhjA=";
+          vendorHash = "sha256-QXDNPADQqKx7HK3b2IwkalmCdwMX3TaPyEVAzVSwuyo=";
 
           postInstall = ''
             mv $out/bin/state-tool $out/bin/${name}
