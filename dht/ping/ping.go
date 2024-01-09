@@ -12,9 +12,9 @@ const (
 )
 
 type Ping struct {
-	PublicKey *dht.PublicKey
-	ID        uint64
-	Time      time.Time
+	publicKey *dht.PublicKey
+	id        uint64
+	time      time.Time
 }
 
 func New(publicKey *dht.PublicKey) (*Ping, error) {
@@ -24,12 +24,16 @@ func New(publicKey *dht.PublicKey) (*Ping, error) {
 	}
 
 	return &Ping{
-		PublicKey: publicKey,
-		ID:        pingID,
-		Time:      time.Now(),
+		publicKey: publicKey,
+		id:        pingID,
+		time:      time.Now(),
 	}, nil
 }
 
 func (p *Ping) Expired(timeout time.Duration) bool {
-	return time.Since(p.Time) > timeout
+	return time.Since(p.time) > timeout
+}
+
+func (p *Ping) ID() uint64 {
+	return p.id
 }

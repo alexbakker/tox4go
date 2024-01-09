@@ -28,9 +28,9 @@ func NewSet(timeout time.Duration) *Set {
 func (c *Set) Add(p *Ping) error {
 	c.ClearExpired()
 
-	key := pingKey{PublicKey: *p.PublicKey, ID: p.ID}
+	key := pingKey{PublicKey: *p.publicKey, ID: p.id}
 	if _, ok := c.pingMap[key]; ok {
-		return fmt.Errorf("ping id already in set: %d", p.ID)
+		return fmt.Errorf("ping id already in set: %d", p.id)
 	}
 
 	c.pingMap[key] = p
@@ -81,7 +81,7 @@ func (c *Set) ClearExpired() {
 			break
 		}
 
-		delete(c.pingMap, pingKey{PublicKey: *p.PublicKey, ID: p.ID})
+		delete(c.pingMap, pingKey{PublicKey: *p.publicKey, ID: p.id})
 	}
 
 	// Slice the pings that have expired away from the ping list
