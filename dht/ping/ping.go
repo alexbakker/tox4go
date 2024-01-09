@@ -7,6 +7,9 @@ import (
 	"github.com/alexbakker/tox4go/dht"
 )
 
+// now is the function used to obtain the current time. It is overridden by tests.
+var now = time.Now
+
 const (
 	DefaultTimeout = time.Second * 20
 )
@@ -26,12 +29,12 @@ func New(publicKey *dht.PublicKey) (*Ping, error) {
 	return &Ping{
 		publicKey: publicKey,
 		id:        pingID,
-		time:      time.Now(),
+		time:      now(),
 	}, nil
 }
 
 func (p *Ping) Expired(timeout time.Duration) bool {
-	return time.Since(p.time) > timeout
+	return now().Sub(p.time) > timeout
 }
 
 func (p *Ping) ID() uint64 {

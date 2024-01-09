@@ -25,26 +25,30 @@ func NewSet(timeout time.Duration) *Set {
 	}
 }
 
-func (c *Set) Add(p *Ping) error {
-	c.ClearExpired()
+func (s *Set) Size() int {
+	return len(s.pingMap)
+}
+
+func (s *Set) Add(p *Ping) error {
+	s.ClearExpired()
 
 	key := pingKey{PublicKey: *p.publicKey, ID: p.id}
-	if _, ok := c.pingMap[key]; ok {
+	if _, ok := s.pingMap[key]; ok {
 		return fmt.Errorf("ping id already in set: %d", p.id)
 	}
 
-	c.pingMap[key] = p
-	c.pings = append(c.pings, p)
+	s.pingMap[key] = p
+	s.pings = append(s.pings, p)
 	return nil
 }
 
-func (c *Set) AddNew(publicKey *dht.PublicKey) (*Ping, error) {
+func (s *Set) AddNew(publicKey *dht.PublicKey) (*Ping, error) {
 	p, err := New(publicKey)
 	if err != nil {
 		return nil, err
 	}
 
-	if err = c.Add(p); err != nil {
+	if err = s.Add(p); err != nil {
 		return nil, err
 	}
 
@@ -55,11 +59,11 @@ func (c *Set) AddNew(publicKey *dht.PublicKey) (*Ping, error) {
 // is found, it is removed from the set and returned. If it is not found, an
 // error is returned. Expiry can also be the reason that the given ping ID is
 // not found, but this will not be reported as a separate error.
-func (c *Set) Pop(publicKey *dht.PublicKey, id uint64) (*Ping, error) {
-	c.ClearExpired()
+func (s *Set) Pop(publicKey *dht.PublicKey, id uint64) (*Ping, error) {
+	s.ClearExpired()
 
 	key := pingKey{PublicKey: *publicKey, ID: id}
-	p, ok := c.pingMap[key]
+	p, ok := s.pingMap[key]
 	if !ok {
 		return nil, fmt.Errorf("ping id not in set: %d", id)
 	}
@@ -67,23 +71,23 @@ func (c *Set) Pop(publicKey *dht.PublicKey, id uint64) (*Ping, error) {
 	// Delete the ping from the map immediately, but wait for expiry before
 	// deleting it from the time-sorted list, because lookups in the latter is
 	// expensive for non-expired pings in large ping lists
-	delete(c.pingMap, key)
+	delete(s.pingMap, key)
 	return p, nil
 }
 
-func (c *Set) ClearExpired() {
+func (s *Set) ClearExpired() {
 	// Iterate through the time-sorted list of pings and delete any pings from
 	// the map that have expired
 	var deli int
-	for i, p := range c.pings {
-		if !p.Expired(c.timeout) {
-			deli = i + 1
+	for i, p := range s.pings {
+		if !p.Expired(s.timeout) {
+			deli = i
 			break
 		}
 
-		delete(c.pingMap, pingKey{PublicKey: *p.publicKey, ID: p.id})
+		delete(s.pingMap, pingKey{PublicKey: *p.publicKey, ID: p.id})
 	}
 
 	// Slice the pings that have expired away from the ping list
-	c.pings = c.pings[deli:]
+	s.pings = s.pings[deli:]
 }
