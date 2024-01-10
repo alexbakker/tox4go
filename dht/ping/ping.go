@@ -11,7 +11,7 @@ import (
 var now = time.Now
 
 const (
-	DefaultTimeout = time.Second * 20
+	DefaultTimeout = time.Second * 5
 )
 
 type Ping struct {
