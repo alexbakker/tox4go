@@ -19,7 +19,7 @@ func generatePublicKey(t *testing.T) *dht.PublicKey {
 
 func addPing(t *testing.T, set *Set) (*dht.PublicKey, *Ping) {
 	pk := generatePublicKey(t)
-	p, err := set.AddNew(pk)
+	p, err := set.Add(pk)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -29,6 +29,10 @@ func addPing(t *testing.T, set *Set) (*dht.PublicKey, *Ping) {
 func assertSetSize(t *testing.T, set *Set, size int) {
 	if set.Size() != size {
 		t.Fatalf("bad ping set size: expected: %d, actual: %d", size, set.Size())
+	}
+
+	if set.Size() != set.pingList.Len() {
+		t.Fatalf("bad ping set size (list): expected: %d, actual: %d", size, set.pingList.Len())
 	}
 }
 

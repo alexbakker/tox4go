@@ -1,7 +1,9 @@
 package ping
 
 import (
+	"container/list"
 	"fmt"
+	"maps"
 	"time"
 
 	"github.com/alexbakker/tox4go/dht"
@@ -13,45 +15,40 @@ type pingKey struct {
 }
 
 type Set struct {
-	pings   []*Ping
-	pingMap map[pingKey]*Ping
-	timeout time.Duration
+	pings    map[pingKey]*Ping
+	pingList *list.List
+	timeout  time.Duration
+
+	lastRealloc time.Time
 }
 
 func NewSet(timeout time.Duration) *Set {
 	return &Set{
-		pingMap: make(map[pingKey]*Ping),
-		timeout: timeout,
+		pings:    make(map[pingKey]*Ping),
+		pingList: list.New(),
+		timeout:  timeout,
 	}
 }
 
 func (s *Set) Size() int {
-	return len(s.pingMap)
+	return len(s.pings)
 }
 
-func (s *Set) Add(p *Ping) error {
-	s.ClearExpired()
+func (s *Set) Add(publicKey *dht.PublicKey) (*Ping, error) {
+	s.clearExpired()
 
-	key := pingKey{PublicKey: *p.publicKey, ID: p.id}
-	if _, ok := s.pingMap[key]; ok {
-		return fmt.Errorf("ping id already in set: %d", p.id)
-	}
-
-	s.pingMap[key] = p
-	s.pings = append(s.pings, p)
-	return nil
-}
-
-func (s *Set) AddNew(publicKey *dht.PublicKey) (*Ping, error) {
 	p, err := New(publicKey)
 	if err != nil {
 		return nil, err
 	}
 
-	if err = s.Add(p); err != nil {
-		return nil, err
+	key := pingKey{PublicKey: *p.publicKey, ID: p.id}
+	if _, ok := s.pings[key]; ok {
+		return nil, fmt.Errorf("ping id already in set: %d", p.id)
 	}
 
+	s.pings[key] = p
+	p.e = s.pingList.PushBack(p)
 	return p, nil
 }
 
@@ -60,34 +57,39 @@ func (s *Set) AddNew(publicKey *dht.PublicKey) (*Ping, error) {
 // error is returned. Expiry can also be the reason that the given ping ID is
 // not found, but this will not be reported as a separate error.
 func (s *Set) Pop(publicKey *dht.PublicKey, id uint64) (*Ping, error) {
-	s.ClearExpired()
+	s.clearExpired()
 
 	key := pingKey{PublicKey: *publicKey, ID: id}
-	p, ok := s.pingMap[key]
+	p, ok := s.pings[key]
 	if !ok {
 		return nil, fmt.Errorf("ping id not in set: %d", id)
 	}
 
-	// Delete the ping from the map immediately, but wait for expiry before
-	// deleting it from the time-sorted list, because lookups in the latter is
-	// expensive for non-expired pings in large ping lists
-	delete(s.pingMap, key)
+	s.delete(p)
 	return p, nil
 }
 
-func (s *Set) ClearExpired() {
-	// Iterate through the time-sorted list of pings and delete any pings from
-	// the map that have expired
-	var deli int
-	for i, p := range s.pings {
+func (s *Set) clearExpired() {
+	var next *list.Element
+	for e := s.pingList.Front(); e != nil; e = next {
+		p := e.Value.(*Ping)
 		if !p.Expired(s.timeout) {
-			deli = i
 			break
 		}
 
-		delete(s.pingMap, pingKey{PublicKey: *p.publicKey, ID: p.id})
+		next = e.Next()
+		s.delete(p)
 	}
 
-	// Slice the pings that have expired away from the ping list
-	s.pings = s.pings[deli:]
+	// Reallocate the ping map every once in a while, so that the memory usage
+	// of the map doesn't keep growing: https://github.com/golang/go/issues/20135
+	if now().Sub(s.lastRealloc) > 1*time.Second {
+		s.pings = maps.Clone(s.pings)
+		s.lastRealloc = now()
+	}
+}
+
+func (s *Set) delete(p *Ping) {
+	delete(s.pings, pingKey{PublicKey: *p.publicKey, ID: p.id})
+	s.pingList.Remove(p.e)
 }

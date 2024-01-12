@@ -1,6 +1,7 @@
 package ping
 
 import (
+	"container/list"
 	"time"
 
 	"github.com/alexbakker/tox4go/crypto"
@@ -18,6 +19,8 @@ type Ping struct {
 	publicKey *dht.PublicKey
 	id        uint64
 	time      time.Time
+
+	e *list.Element
 }
 
 func New(publicKey *dht.PublicKey) (*Ping, error) {
