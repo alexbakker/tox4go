@@ -402,6 +402,26 @@ func (n *Node) Addr() net.Addr {
 	}
 }
 
+// UnmarshalText implements the encoding.TextUnmarshaler interface.
+func (t *NodeType) UnmarshalText(data []byte) error {
+	s := string(data)
+
+	switch s {
+	case "udp4":
+		*t = NodeTypeUDPIP4
+	case "udp6":
+		*t = NodeTypeUDPIP6
+	case "tcp4":
+		*t = NodeTypeTCPIP4
+	case "tcp6":
+		*t = NodeTypeTCPIP6
+	default:
+		return fmt.Errorf("bad node type: %s", s)
+	}
+
+	return nil
+}
+
 func (t NodeType) Net() string {
 	switch t {
 	case NodeTypeUDPIP4:
