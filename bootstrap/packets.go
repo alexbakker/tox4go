@@ -1,28 +1,35 @@
 package bootstrap
 
-/*
-This seems like a lot of code for one packet type.
-Yes, I know. But I wanted to stay consistent with the rest of the codebase.
-*/
-
 import (
 	"bytes"
+	"encoding"
 	"encoding/binary"
 	"errors"
 	"fmt"
+)
 
-	"github.com/alexbakker/tox4go/transport"
+type PacketType byte
+
+const (
+	PacketTypeBootstrapInfo PacketType = 0xF0
 )
 
 const (
-	PacketIDBootstrapInfo   byte = 240
-	infoRequestPacketLength      = 78
-	maxMOTDLength                = 256
+	requestPacketLength = 78
+	maxMOTDLength       = 256
 )
 
-// Packet represents the base of all bootstrap node packets.
-type Packet struct {
-	Type    byte
+var ErrUnknownPacketType = errors.New("unknown packet type")
+
+type Packet interface {
+	encoding.BinaryMarshaler
+	encoding.BinaryUnmarshaler
+	ID() PacketType
+}
+
+// RawPacket represents the base of all bootstrap node packets.
+type RawPacket struct {
+	Type    PacketType
 	Payload []byte
 }
 
@@ -39,7 +46,7 @@ type InfoResponsePacket struct {
 type InfoRequestPacket struct{}
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface.
-func (p *Packet) MarshalBinary() ([]byte, error) {
+func (p *RawPacket) MarshalBinary() ([]byte, error) {
 	buff := new(bytes.Buffer)
 
 	err := binary.Write(buff, binary.BigEndian, p.Type)
@@ -56,7 +63,7 @@ func (p *Packet) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface.
-func (p *Packet) UnmarshalBinary(data []byte) error {
+func (p *RawPacket) UnmarshalBinary(data []byte) error {
 	reader := bytes.NewReader(data)
 
 	err := binary.Read(reader, binary.BigEndian, &p.Type)
@@ -115,15 +122,15 @@ func (p *InfoResponsePacket) UnmarshalBinary(data []byte) error {
 }
 
 // ID returns the packet ID of this packet.
-func (p InfoResponsePacket) ID() byte {
-	return PacketIDBootstrapInfo
+func (p InfoResponsePacket) ID() PacketType {
+	return PacketTypeBootstrapInfo
 }
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface.
 func (p *InfoRequestPacket) MarshalBinary() ([]byte, error) {
 	buff := new(bytes.Buffer)
 
-	zeroes := make([]byte, infoRequestPacketLength-1)
+	zeroes := make([]byte, requestPacketLength-1)
 	_, err := buff.Write(zeroes)
 	if err != nil {
 		return nil, err
@@ -135,7 +142,7 @@ func (p *InfoRequestPacket) MarshalBinary() ([]byte, error) {
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface.
 func (p *InfoRequestPacket) UnmarshalBinary(data []byte) error {
 	dataLen := len(data)
-	expected := infoRequestPacketLength - 1
+	expected := requestPacketLength - 1
 
 	if dataLen != expected {
 		return fmt.Errorf("invalid packet length: %d, expected: %d", dataLen, expected)
@@ -145,46 +152,52 @@ func (p *InfoRequestPacket) UnmarshalBinary(data []byte) error {
 }
 
 // ID returns the packet ID of this packet.
-func (p InfoRequestPacket) ID() byte {
-	return PacketIDBootstrapInfo
+func (p InfoRequestPacket) ID() PacketType {
+	return PacketTypeBootstrapInfo
 }
 
-func DestructPacket(p *Packet) (transport.Packet, error) {
-	var tPacket transport.Packet
-
-	switch p.Type {
-	case PacketIDBootstrapInfo:
-		packetLen := len(p.Payload)
-
-		//horrible, but it's the best we can do
-		if packetLen == infoRequestPacketLength-1 && sliceIsZero(p.Payload) {
-			tPacket = &InfoRequestPacket{}
-		} else {
-			tPacket = &InfoResponsePacket{}
-		}
-	default:
-		return nil, fmt.Errorf("unknown packet type: %d", p.Type)
-	}
-
-	err := tPacket.UnmarshalBinary(p.Payload)
-	if err != nil {
+func UnmarshalBinary(data []byte) (Packet, error) {
+	var raw RawPacket
+	if err := raw.UnmarshalBinary(data); err != nil {
 		return nil, err
 	}
 
-	return tPacket, nil
+	return UnmarshalPacket(&raw)
 }
 
-func ConstructPacket(packet transport.Packet) (*Packet, error) {
-	base := &Packet{}
-	base.Type = packet.ID()
+func UnmarshalPacket(p *RawPacket) (Packet, error) {
+	var res Packet
 
+	switch p.Type {
+	case PacketTypeBootstrapInfo:
+		packetLen := len(p.Payload)
+
+		if packetLen == requestPacketLength-1 && sliceIsZero(p.Payload) {
+			res = &InfoRequestPacket{}
+		} else {
+			res = &InfoResponsePacket{}
+		}
+	default:
+		return nil, fmt.Errorf("%w: %d", ErrUnknownPacketType, p.Type)
+	}
+
+	if err := res.UnmarshalBinary(p.Payload); err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
+func MarshalPacket(packet Packet) (*RawPacket, error) {
 	payload, err := packet.MarshalBinary()
 	if err != nil {
 		return nil, err
 	}
 
-	base.Payload = payload
-	return base, nil
+	return &RawPacket{
+		Type:    packet.ID(),
+		Payload: payload,
+	}, nil
 }
 
 func sliceIsZero(data []byte) bool {
