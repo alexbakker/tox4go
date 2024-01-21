@@ -208,3 +208,15 @@ func sliceIsZero(data []byte) bool {
 	}
 	return true
 }
+
+func (t PacketType) String() string {
+	var name string
+	switch t {
+	case PacketTypeBootstrapInfo:
+		name = "BOOTSTRAP_INFO"
+	default:
+		name = "UNKNOWN"
+	}
+
+	return fmt.Sprintf("%s(%d)", name, t)
+}
