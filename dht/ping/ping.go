@@ -11,10 +11,6 @@ import (
 // now is the function used to obtain the current time. It is overridden by tests.
 var now = time.Now
 
-const (
-	DefaultTimeout = time.Second * 5
-)
-
 type Ping struct {
 	publicKey *dht.PublicKey
 	id        uint64

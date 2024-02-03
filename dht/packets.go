@@ -9,6 +9,7 @@ import (
 	"net"
 
 	"github.com/alexbakker/tox4go/crypto"
+	"github.com/alexbakker/tox4go/internal/util"
 )
 
 type PacketType byte
@@ -102,7 +103,11 @@ func (p *GetNodesPacket) UnmarshalBinary(data []byte) error {
 		return err
 	}
 
-	return binary.Read(reader, binary.BigEndian, &p.PingID)
+	if err := binary.Read(reader, binary.BigEndian, &p.PingID); err != nil {
+		return err
+	}
+
+	return util.AssertReaderEOF(reader)
 }
 
 // ID returns the packet ID of this packet.
@@ -244,7 +249,11 @@ func (p *SendNodesPacket) UnmarshalBinary(data []byte) error {
 		}
 	}
 
-	return binary.Read(reader, binary.BigEndian, &p.PingID)
+	if err := binary.Read(reader, binary.BigEndian, &p.PingID); err != nil {
+		return err
+	}
+
+	return util.AssertReaderEOF(reader)
 }
 
 // ID returns the packet ID of this packet.
@@ -281,7 +290,11 @@ func (p *PingResponsePacket) UnmarshalBinary(data []byte) error {
 		return fmt.Errorf("incorrect ping type: %d! is this a replay attack?", pingType)
 	}
 
-	return binary.Read(reader, binary.BigEndian, &p.PingID)
+	if err := binary.Read(reader, binary.BigEndian, &p.PingID); err != nil {
+		return err
+	}
+
+	return util.AssertReaderEOF(reader)
 }
 
 // ID returns the packet ID of this packet.
@@ -318,7 +331,11 @@ func (p *PingRequestPacket) UnmarshalBinary(data []byte) error {
 		return fmt.Errorf("incorrect ping type: %d! is this a replay attack?", pingType)
 	}
 
-	return binary.Read(reader, binary.BigEndian, &p.PingID)
+	if err := binary.Read(reader, binary.BigEndian, &p.PingID); err != nil {
+		return err
+	}
+
+	return util.AssertReaderEOF(reader)
 }
 
 // ID returns the packet ID of this packet.
@@ -361,8 +378,11 @@ func (n *Node) UnmarshalBinary(data []byte) error {
 	n.Port = int(port)
 
 	n.PublicKey = new(PublicKey)
-	_, err = reader.Read(n.PublicKey[:])
-	return err
+	if _, err = reader.Read(n.PublicKey[:]); err != nil {
+		return err
+	}
+
+	return util.AssertReaderEOF(reader)
 }
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface.

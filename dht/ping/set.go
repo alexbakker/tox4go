@@ -9,6 +9,10 @@ import (
 	"github.com/alexbakker/tox4go/dht"
 )
 
+const (
+	DefaultTimeout = time.Second * 5
+)
+
 type pingKey struct {
 	ID        uint64
 	PublicKey dht.PublicKey
